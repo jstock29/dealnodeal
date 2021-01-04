@@ -1,5 +1,4 @@
 import random
-
 import numpy as np
 import streamlit as st
 import pandas as pd
@@ -26,22 +25,19 @@ VALUES = [
     50_000,
     75_000,
     100_000,
-    200_000,
-    300_000,
-    400_000,
+    # 200_000,
+    250_000,
+    # 300_000,
+    # 400_000,
     500_000,
     750_000,
-    1_000_000
+    1_000_000,
+    # 2_000_000,
+    3_000_000,
+    6_000_000,
 ]
 
-BIG_VALUES = [
-    100_000,
-    200_000,
-    300_000,
-    400_000,
-    500_000,
-    750_000,
-    1_000_000]
+BIG_VALUES = [val for val in VALUES if val >= 100_000]
 
 L_SUM = sum([val for val in VALUES[:len(VALUES) // 2]])
 R_SUM = sum([val for val in VALUES[len(VALUES) // 2:]])
@@ -102,9 +98,9 @@ def main():
         st.write(f'Probability of having a big value: {round(len(remaining_bigs) / len(remaining) * 100, 1)}%')
 
     st.subheader('Offers')
-    round_number = int(st.number_input('Round Number', min_value=1., max_value=15., step=1.))
-    prev_offer = st.number_input('Previous offer', min_value=0., max_value=1_000_000., step=1000.)
-    offer = st.number_input('Current offer', min_value=0., max_value=1_000_000., step=1000.)
+    round_number = int(st.number_input('Round Number', min_value=1, max_value=15, step=1,format='%i'))
+    prev_offer = st.number_input('Previous offer', min_value=0., max_value=5_000_000., step=1000.)
+    offer = st.number_input('Current offer', min_value=0., max_value=5_000_000., step=1000.)
 
     col4, col5 = st.beta_columns(2)
     with col4:
@@ -185,12 +181,12 @@ def overwrite_table(table: pd.DataFrame, table_name: str):
     table.to_sql(table_name, con=engine, if_exists='replace', method='multi')
 
 
-# def calc_big_val_prob(df):
-#     remaining_list = df['Remaining Values'].apply(lambda x: x.replace('[', '').replace(']', '').split(','))
-#     remaining_list = remaining_list.apply(lambda x: [int(_) for _ in x])
-#     remaining_bigs = remaining_list.apply(lambda x: [_ for _ in x if _ in BIG_VALUES])
-#     df['Probability of Big Value'] = round(remaining_bigs.apply(len) / remaining_list.apply(len), 3)
-#     return df
+def calc_big_val_prob(df):
+    remaining_list = df['Remaining Values'].apply(lambda x: x.replace('[', '').replace(']', '').split(','))
+    remaining_list = remaining_list.apply(lambda x: [int(_) for _ in x])
+    remaining_bigs = remaining_list.apply(lambda x: [_ for _ in x if _ in BIG_VALUES])
+    df['Probability of Big Value'] = round(remaining_bigs.apply(len) / remaining_list.apply(len), 3)
+    return df
 
 
 if __name__ == '__main__':
