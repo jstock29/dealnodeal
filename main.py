@@ -1,8 +1,12 @@
+import json
+import os
 import random
 import numpy as np
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
+import visualization
+import joblib
 
 VALUES = [
     0,
@@ -25,16 +29,16 @@ VALUES = [
     50_000,
     75_000,
     100_000,
-    # 200_000,
-    250_000,
-    # 300_000,
-    # 400_000,
+    200_000,
+    # 250_000,
+    300_000,
+    400_000,
     500_000,
     750_000,
     1_000_000,
     # 2_000_000,
-    3_000_000,
-    6_000_000,
+    # 3_000_000,
+    # 6_000_000,
 ]
 
 BIG_VALUES = [val for val in VALUES if val >= 100_000]
@@ -48,6 +52,10 @@ engine = create_engine('postgresql://{user}:{pw}@{host}:{port}/{dbname}'.
 
 
 def main():
+    st.set_page_config(
+        page_title="DEAL OR NO DEAL",
+        page_icon="🤑",
+        initial_sidebar_state="expanded")
     st.sidebar.title('DEAL OR NO DEAL')
     game_id = st.sidebar.text_input('Game ID')
     contestant_name = st.sidebar.text_input('Contestant Name')
@@ -55,6 +63,9 @@ def main():
     contestant_race = st.sidebar.selectbox('Contestant Race',
                                            ['White', 'Black', 'Hispanic', 'Asian', 'Hawaiian/Pacific Islander',
                                             'Native American'])
+    if st.sidebar.button('Clear saved predictions'):
+        with open('preds.json', 'w+') as f:
+            json.dump([], f)
     st.header('Board')
     col1, col2, col3 = st.beta_columns(3)
     l_cols = VALUES[:len(VALUES) // 2]
@@ -93,36 +104,37 @@ def main():
         st.subheader('Stats')
         st.write(f'Picked: {len(choices)}')
         st.write(f'Expected Value: {round(ev, 0)}')
-        st.write(f'Balance: {round(balance, 2)}')
         st.write(f'Standard Deviation: {round(standard_deviation, 2)}')
+        st.write(
+            f'1 Sigma Range: [{max(round(ev - standard_deviation, 0), 0)}:{min(round(ev + standard_deviation, 0), 1_000_000)}]')
+        st.write(
+            f'1/2 Sigma Range: [{max(round(ev - (standard_deviation / 2), 0), 0)}:{min(round(ev + (standard_deviation / 2), 0), 1_000_000)}]')
+        st.write(f'Balance: {round(balance, 2)}')
         st.write(f'Probability of having a big value: {round(len(remaining_bigs) / len(remaining) * 100, 1)}%')
 
     st.subheader('Offers')
-    round_number = int(st.number_input('Round Number', min_value=1, max_value=15, step=1,format='%i'))
-    prev_offer = st.number_input('Previous offer', min_value=0., max_value=5_000_000., step=1000.)
-    offer = st.number_input('Current offer', min_value=0., max_value=5_000_000., step=1000.)
+    col11, col12, col13 = st.beta_columns(3)
+    with col11:
+        round_number = int(st.number_input('Round Number', min_value=1, max_value=15, step=1, format='%i'))
+    with col12:
+        prev_offer = st.number_input('Previous offer', min_value=0., max_value=5_000_000., step=1000.)
+    with col13:
+        offer = st.number_input('Current offer', min_value=0., max_value=5_000_000., step=1000.)
+    st.write(f'% of Expected Value: {round((offer / ev) * 100, 2)}%')
 
-    col4, col5 = st.beta_columns(2)
-    with col4:
-        st.write(f'Delta to Expected Value: {round(offer - ev, 0)}')
-        st.write(f'Offer % of Expected Value: {round((offer / ev) * 100, 2)}%')
-        if offer / ev <= 1:
-            st.progress(offer / ev)
-        else:
-            st.progress(1)
-    with col5:
-        st.write(f'Delta to Best Remaining: {round((offer - _max), 0)}')
-        st.write(f'Offer % of Best Remaining: {round((offer / _max * 100), 2)}%')
-        if offer / ev <= 1:
-            st.progress(offer / _max)
-        else:
-            st.progress(1)
-    deal = st.checkbox('Deal?')
-    amount_won = 0
-    if deal:
-        amount_won = st.number_input('Amount Won')
+    if offer / ev <= 1:
+        st.progress(offer / ev)
+    else:
+        st.progress(1)
+    col14, col15 = st.beta_columns(2)
 
-    postgame = st.checkbox('Postgame?')
+    with col14:
+        deal = st.checkbox('Deal?')
+        amount_won = 0
+        if deal:
+            amount_won = st.number_input('Amount Won')
+    with col15:
+        postgame = st.checkbox('Postgame?')
 
     if st.button('Populate Round'):
         round_data = {
@@ -144,12 +156,70 @@ def main():
             "Postgame": postgame
         }
         df = pd.DataFrame(round_data, index=[0])
-        st.write(df)
         populate_round(df, 'game_data')
+    data = get_data('game_data')
+
+    st.subheader('Predictions')
+    manual_models = os.listdir('models')
+    manual_models = [m for m in manual_models if '.pkl' in m]
+    auto_models = os.listdir('models/auto')
+    try:
+        with open('preds.json') as f:
+            hist_preds = json.load(f)
+    except:
+        hist_preds=[]
+    selected_models = st.multiselect('Models', sorted(manual_models))
+    if len(choices) > 5:
+        X = pd.DataFrame({'Round': [round_number], 'Board Average': [ev], 'Previous Offer': [prev_offer]})
+        for selected_model in selected_models:
+            model = joblib.load('models/' + selected_model)
+            p = model.predict(X)
+            hist_preds.append({'Round': round_number, 'Prediction': int(p[0]), 'Model': selected_model})
+            st.subheader(selected_model)
+            col21, col22,col23 = st.beta_columns(3)
+            with col21:
+                st.write(f'Prediction: ${round(float(p[0]), 2)}')
+            with col22:
+                st.write(f'Prediction % of Expected Value: {round((float(p[0]) / ev) * 100, 2)}%')
+            with col23:
+                if offer != 0:
+                    st.write(f'Error: {round((abs(offer - float(p[0])) / offer) * 100, 2)}%')
+
+        if st.checkbox('Auto models'):
+            for auto in auto_models:
+                model = joblib.load('models/auto/' + auto)
+                p = model.predict(X)
+                if offer != 0:
+                    hist_preds.append({auto: float(p[0]), 'error': round((abs(offer - float(p[0])) / offer) * 100, 2)})
+                else:
+                    hist_preds.append({auto: float(p[0]), 'error': None})
+
+        if st.checkbox('Show all models'):
+            st.write(hist_preds)
+
+        if st.button('Save round'):
+            with open('preds.json', 'w+') as f:
+                json.dump(hist_preds, f)
+    else:
+        st.write('Make choices for round')
+
+    # col4, col5 = st.beta_columns(2)
+    # with col4:
+    if len(hist_preds) > 0:
+        visualization.single_line(data, game_id, hist_preds)
+    else:
+        visualization.single_line(data, game_id)
+
+    # with col5:
+    probability_data = data[['Game ID', 'Round', 'Offer', 'Offer Percent of Average', 'Probability of Big Value']]
+    visualization.box_plot(probability_data, 'Offer Percent of Average')
 
     st.subheader('Database')
-    data = get_data('game_data')
     st.dataframe(data)
+
+    if st.checkbox('Viz'):
+        visualization.offers(data)
+    # visualization.profiling(data)
 
 
 def expected_value(values: list):
@@ -175,6 +245,7 @@ def get_data(table: str) -> pd.DataFrame:
 
 def populate_round(row: pd.DataFrame, table_name: str):
     row.to_sql(table_name, con=engine, if_exists='append', method='multi')
+    row.to_pickle('latest_round.pkl')
 
 
 def overwrite_table(table: pd.DataFrame, table_name: str):
