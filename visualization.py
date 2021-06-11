@@ -1,5 +1,4 @@
 import streamlit as st
-from main import get_data
 from pandas_profiling import ProfileReport
 from streamlit_pandas_profiling import st_profile_report
 import pandas as pd
@@ -7,11 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import altair as alt
-
-
-# import pydeck as pdk
-# import altair as alt
-# from sklearn import preprocessing as pre
 
 def make_correlation_plot(df: pd.DataFrame):
     st.subheader('Correlation Plot')
@@ -150,18 +144,18 @@ def probability_multi_line(data: pd.DataFrame, averages: pd.DataFrame):
     st.altair_chart(layers)
 
 
-def box_plot(data: pd.DataFrame, feature: str):
+def box_plot(data: pd.DataFrame, feature: str, width: int = 800, height: int = 400):
     boxplot = alt.Chart(data).mark_boxplot().encode(
         x='Round:O',
         y=f'{feature}:Q'
     ).properties(
-        width=800,
-        height=400
+        width=width,
+        height=height
     )
     st.altair_chart(boxplot)
 
 
-def single_line(data: pd.DataFrame, game_id: str, preds: list = []):
+def single_line(data: pd.DataFrame, game_id: str, preds: list = [], width: int = 800, height: int = 400):
     pred_df = pd.DataFrame(preds)
     line = data[data['Game ID'] == game_id]
     if line.shape[0] > 10:
@@ -206,15 +200,58 @@ def single_line(data: pd.DataFrame, game_id: str, preds: list = []):
         ).transform_filter(
             nearest
         )
-        layers = alt.layer(offers, expected, predictions,selectors,points, text,rules).properties(
-            width=800,
-            height=400
+        layers = alt.layer(offers, expected, predictions, selectors, points, text, rules).properties(
+            width=width,
+            height=height
         )
     else:
         layers = alt.layer(offers, expected).properties(
-            width=800,
-            height=400
+            width=width,
+            height=height
         )
+    st.altair_chart(layers)
+
+
+def single_line_offers(data: pd.DataFrame, game_id: str, width: int = 800, height: int = 400):
+    line = data[data['Game ID'] == game_id]
+    if line.shape[0] > 10:
+        ticks = 10
+    else:
+        ticks = line.shape[0]
+    offers = alt.Chart(line).mark_line().encode(
+        x=alt.X('Round:Q', axis=alt.Axis(tickCount=ticks, grid=False)),
+        y=f'Offer:Q',
+        color=alt.value('red'),
+        opacity=alt.value(1)
+    )
+    expected = alt.Chart(line).mark_line().encode(
+        x=alt.X('Round:Q', axis=alt.Axis(tickCount=ticks, grid=False)),
+        y=f'Board Average:Q',
+        color=alt.value('gray'),
+        opacity=alt.value(.75)
+    )
+    nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Round'], empty='none')
+    selectors = alt.Chart(data).mark_point().encode(
+        x='Round:Q',
+        opacity=alt.value(0),
+    ).add_selection(
+        nearest
+    )
+    points = offers.mark_point().encode(
+        opacity=alt.condition(nearest, alt.value(1), alt.value(0))
+    )
+    text = offers.mark_text(align='left', dx=5, dy=-5).encode(
+        text=alt.condition(nearest, 'Offer', alt.value(' '))
+    )
+    rules = alt.Chart(data).mark_rule(color='gray').encode(
+        x='Round:Q',
+    ).transform_filter(
+        nearest
+    )
+    layers = alt.layer(offers, expected, selectors, points, text, rules).properties(
+        width=width,
+        height=height
+    )
     st.altair_chart(layers)
 
 

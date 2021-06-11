@@ -1,12 +1,12 @@
 import json
 import os
-import random
 import numpy as np
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 import visualization
 import joblib
+
 
 VALUES = [
     0,
