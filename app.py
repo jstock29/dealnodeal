@@ -78,8 +78,10 @@ def main():
     selected_banker = st.sidebar.selectbox('Pick your Banker', ['Random Forest', 'LightGBM', 'XGBoost'], 0)
     if st.sidebar.button('New Game'):
         new_game()
-    st.sidebar.write("""
-    This is a simulation of the Deal or No Deal Banker's offers. You can see what the RoboBanker will offer by simulating a board at various rounds. Each round you should pick the correct number of values:
+    st.sidebar.markdown("""
+    This is a simulation of the Deal or No Deal Banker's offers. The code for this project can be found at [my Github](https://github.com/jstock29/dealnodeal) and the data that I painstaking collected from over 100 episodes of the show is on [my Kaggle](https://www.kaggle.com/jaredstock/deal-or-no-deal-game-data).
+    
+    You can see what the RoboBanker will offer by simulating a board at various rounds. Each round you should pick the correct number of values from the board:
     
     1. Pick 6 - 6 Total
     2. Pick 5 - 11 Total
@@ -91,7 +93,13 @@ def main():
     8. Pick 1 - 23 Total
     9. Pick 1 - 24 Total
     10. Pick 1 -25 Total
+    
+    After each round you can see what my RoboBanker is offering you and decided if that's a deal you want to take or not. I will not give you that money though.
+    
+    FYI: Anonymous game data is sent to my database so I can maybe do stuff with it later. I don't know why that would sketch you out, this is all fake, but there you go.
     """)
+
+    st.sidebar.caption('Jared Stock | NYC | 2021')
 
 
     app_state = st.experimental_get_query_params()
