@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import altair as alt
 
+
 def make_correlation_plot(df: pd.DataFrame):
     st.subheader('Correlation Plot')
     fig, ax = plt.subplots(figsize=(10, 10))

@@ -2,7 +2,6 @@ import eli5
 import joblib
 import streamlit as st
 import pandas as pd
-import numpy as np
 from sklearn.svm import LinearSVC
 from sqlalchemy import create_engine
 
@@ -10,38 +9,24 @@ from sklearn import preprocessing as pre
 import sklearn.model_selection as select
 from sklearn import linear_model
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, ExtraTreesClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import f_classif, mutual_info_classif, SelectFromModel
-from lightgbm import LGBMClassifier
-from boruta import BorutaPy
 from xgboost import XGBRegressor
-from lazypredict.Supervised import LazyRegressor
 import lightgbm as lgb
-
-
-import shap
 
 import visualization as viz
 
-POSTGRES_ADDRESS = 'localhost'
-POSTGRES_PORT = '5432'
-POSTGRES_USERNAME = 'postgres'
-POSTGRES_PASSWORD = 'Password'
-POSTGRES_DBNAME = 'dealnodeal'
 
-postgres_str = ('postgresql://{username}:{password}@{ipaddress}:{port}/{dbname}'.format(username=POSTGRES_USERNAME,
-                                                                                        password=POSTGRES_PASSWORD,
-                                                                                        ipaddress=POSTGRES_ADDRESS,
-                                                                                        port=POSTGRES_PORT,
-                                                                                        dbname=POSTGRES_DBNAME))
+engine = create_engine('postgresql://{user}:{pw}@{host}:{port}/{dbname}'.
+                       format(user=st.secrets['username'], pw=st.secrets['password'], host=st.secrets['host'], port=5432,
+                              dbname=st.secrets['dbname']))
+
 
 MODELS = {
     "Linear OLS": linear_model.LinearRegression(),
@@ -160,11 +145,11 @@ def train_model(data: pd.DataFrame):
         viz.profiling(X)
 
     X_train, X_valid, y_train, y_valid = split_data(X, y)
-
-    if st.checkbox('Lazy Predict'):
-        reg = LazyRegressor(ignore_warnings=False, custom_metric=None)
-        models, predictions = reg.fit(X_train, X_valid, y_train, y_valid)
-        st.table(models)
+    #
+    # if st.checkbox('Lazy Predict'):
+    #     reg = LazyRegressor(ignore_warnings=False, custom_metric=None)
+    #     models, predictions = reg.fit(X_train, X_valid, y_train, y_valid)
+    #     st.table(models)
 
     st.subheader('Feature Selection')
     if st.checkbox('Show'):
@@ -350,8 +335,7 @@ def find_best_model(data: pd.DataFrame):
 
 @st.cache(ttl=3600)
 def get_data():
-    conn = create_engine(postgres_str)
-    data = pd.read_sql_table('game_data', conn)
+    data = pd.read_sql_table('game_data', engine)
     data.drop(['index', 'Game ID', 'Contestant Name'], inplace=True, axis=1)
     return data
 
@@ -361,7 +345,6 @@ def main():
         page_title="Robo Banker",
         page_icon="🤖",
         initial_sidebar_state="expanded")
-    print(st._is_running_with_streamlit)
     st.sidebar.write("""
         # Robo Banker
         """)

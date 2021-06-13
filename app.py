@@ -46,9 +46,11 @@ L_SUM = sum([val for val in VALUES[:len(VALUES) // 2]])
 
 R_SUM = sum([val for val in VALUES[len(VALUES) // 2:]])
 
+print(st.secrets)
 engine = create_engine('postgresql://{user}:{pw}@{host}:{port}/{dbname}'.
-                       format(user=st.secrets['username'], pw=st.secrets['password'], host='localhost', port=5432,
-                              dbname='dealnodeal'))
+                       format(user=st.secrets['username'], pw=st.secrets['password'], host=st.secrets['host'],
+                              port=5432,
+                              dbname=st.secrets['dbname']))
 
 session = SessionState.get(run_id=0)
 
@@ -71,33 +73,24 @@ def main():
         page_icon="🤑",
         initial_sidebar_state="expanded")
     st.sidebar.title('DEAL OR NO DEAL')
-    st.sidebar.write("""
-    This is a simulation of Deal or No Deal
-    
-    * Round 1: Pick 6
-    
-    * Round 2: Pick 5
-    
-    * Round 3: Pick 4
-    
-    * Round 4: Pick 3
-    
-    * Round 5: Pick 2
-    
-    * Round 6: Pick 1
-    
-    * Round 7: Pick 1
-    
-    * Round 8: Pick 1
-    
-    * Round 9: Pick 1
-    
-    * Round 10: Pick 1
-    
-    
-    """)
+    selected_banker = st.sidebar.selectbox('Pick your Banker', ['Random Forest', 'LightGBM', 'XGBoost'], 0)
     if st.sidebar.button('New Game'):
         new_game()
+    st.sidebar.write("""
+    This is a simulation of the Deal or No Deal Banker's offers. You can see what the RoboBanker will offer by simulating a board at various rounds. Each round you should pick the correct number of values:
+    
+    1. Pick 6 - 6 Total
+    2. Pick 5 - 11 Total
+    3. Pick 4 - 15 Total
+    4. Pick 3 - 18 Total
+    5. Pick 2 - 20 Total
+    6. Pick 1 - 21 Total
+    7. Pick 1 - 22 Total
+    8. Pick 1 - 23 Total
+    9. Pick 1 - 24 Total
+    10. Pick 1 -25 Total
+    """)
+
 
     app_state = st.experimental_get_query_params()
     game_id = app_state['game_id'][0]
@@ -111,7 +104,7 @@ def main():
     col1, col2, col3 = st.beta_columns(3)
     l_cols = VALUES[:len(VALUES) // 2]
     r_cols = VALUES[len(VALUES) // 2:]
-    model = joblib.load('models/robobanker.pkl')
+    model = joblib.load(f'bankers/{selected_banker}.pkl')
 
     with col1:
         values_1 = [st.checkbox(str(val), key=session.run_id) for val in VALUES[:len(VALUES) // 2]]
