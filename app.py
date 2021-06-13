@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 import streamlit as st
 import pandas as pd
@@ -145,12 +147,13 @@ def main():
         offer = float(p[0])
 
         st.write(f'Offer: ${round(float(offer), 2)}')
-        st.write(f'Offer % of Expected Value: {round((offer / ev) * 100, 2)}%')
 
         if offer / ev <= 1:
             st.progress(offer / ev)
         else:
             st.progress(1)
+        st.caption(f'Offer % of Expected Value: {round((offer / ev) * 100, 2)}%')
+
     else:
         st.info('Pick values to see offers')
 
@@ -169,6 +172,8 @@ def main():
                     "Previous Offer": prev_offer,
                     "Offer": round(offer, 0),
                     "Offer Percent of Average": round(offer / average, 4),
+                    "model":selected_banker,
+                    "datetime":datetime.datetime.now(),
                     "Deal": True
                 }
                 df = pd.DataFrame(round_data, index=[0])
@@ -186,6 +191,8 @@ def main():
                     "Previous Offer": prev_offer,
                     "Offer": round(offer, 0),
                     "Offer Percent of Average": round(offer / average, 4),
+                    "model":selected_banker,
+                    "datetime":datetime.datetime.now(),
                     "Deal": False
                 }
                 round_number += 1
