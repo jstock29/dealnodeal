@@ -48,7 +48,6 @@ L_SUM = sum([val for val in VALUES[:len(VALUES) // 2]])
 
 R_SUM = sum([val for val in VALUES[len(VALUES) // 2:]])
 
-print(st.secrets)
 engine = create_engine('postgresql://{user}:{pw}@{host}:{port}/{dbname}'.
                        format(user=st.secrets['username'], pw=st.secrets['password'], host=st.secrets['host'],
                               port=5432,
@@ -94,7 +93,7 @@ def main():
     9. Pick 1 - 24 Total
     10. Pick 1 -25 Total
     
-    After each round you can see what my RoboBanker is offering you and decided if that's a deal you want to take or not. I will not give you that money though.
+    After each round you can see what my RoboBanker is offering you and decide if that's a deal you want to take or not. I will not give you that money though.
     
     FYI: Anonymous game data is sent to my database so I can maybe do stuff with it later. I don't know why that would sketch you out, this is all fake, but there you go.
     """)
