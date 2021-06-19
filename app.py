@@ -78,7 +78,7 @@ def main():
     if st.sidebar.button('New Game'):
         new_game()
     st.sidebar.markdown("""
-    This is a simulation of the Deal or No Deal Banker's offers. The code for this project can be found at [my Github](https://github.com/jstock29/dealnodeal) and the data that I painstaking collected from over 100 episodes of the show is on [my Kaggle](https://www.kaggle.com/jaredstock/deal-or-no-deal-game-data).
+    This is a simulation of the Deal or No Deal Banker's offers. The code for this project can be found at [my Github](https://github.com/jstock29/dealnodeal) and the data that I painstakingly collected from over 100 episodes of the show is on [my Kaggle](https://www.kaggle.com/jaredstock/deal-or-no-deal-game-data).
     
     You can see what the RoboBanker will offer by simulating a board at various rounds. Each round you should pick the correct number of values from the board:
     
